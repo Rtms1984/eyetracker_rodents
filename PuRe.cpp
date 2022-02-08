@@ -42,14 +42,15 @@
 #include <numeric>
 #include <opencv2/highgui.hpp>
 
-//#define SAVE_ILLUSTRATION
+#define SAVE_ILLUSTRATION
 
 using namespace std;
 using namespace cv;
 
 PuRe::PuRe() :
-	baseSize(640,480), expectedFrameSize(-1,-1), outlineBias(5) {
-	//baseSize(320, 240)
+	//baseSize(320, 240) //2022 Sogand
+	baseSize(960, 600), expectedFrameSize(-1,-1), outlineBias(5) {
+
     mDesc = "PuRe (Santini et. al 2018a)";
     mTitle = "PuRe";
 
@@ -62,6 +63,7 @@ PuRe::PuRe() :
 	 * Anthropometric analysis of eyebrows and eyelids:
 	 * An inter-racial study
 	 */
+
 	//meanCanthiDistanceMM = 27.6f;
 	//meanCanthiDistanceMM = 32.7f;
 	meanCanthiDistanceMM = 12.0f; //2022 Sogand
@@ -597,7 +599,8 @@ void PuRe::detect(Pupil &pupil, std::vector<cv::Point2f> &inlierPts) {
 	 
 	
 	// 3.2 Edge Detection and Morphological Transformation
-	Mat detectedEdges = canny(input, true, true, 64, nonEdgePixRatio, 0.4f);
+	//Mat detectedEdges = canny(input, true, true, 64, 0.5f, 0.4f);
+	Mat detectedEdges = canny(input, true, true, 64, nonEdgePixRatio, 0.4f); //2022
 
 	if (LR == 1) imshow("edges L ", detectedEdges);
 	if (LR == 2) imshow("edges R ", detectedEdges);
@@ -620,7 +623,7 @@ void PuRe::detect(Pupil &pupil, std::vector<cv::Point2f> &inlierPts) {
 	float r = 255.0 / candidates.size();
 	int i = 0;
 	Mat candidatesImage;
-	cvtColor(input, candidatesImage, CV_GRAY2BGR);
+	cvtColor(input, candidatesImage, cv::COLOR_GRAY2BGR);
 	for ( auto c = candidates.begin(); c != candidates.end(); c++) {
 		Mat colorMat = (Mat_<uchar>(1,1) << i*r);
 		applyColorMap(colorMat, colorMat, COLORMAP_HSV);
@@ -644,17 +647,17 @@ void PuRe::detect(Pupil &pupil, std::vector<cv::Point2f> &inlierPts) {
 			c->score = 0;
 	}
 
-	/*
-	for ( int i=0; i<candidates.size(); i++) {
+	
+	/*for (int i = 0; i<candidates.size(); i++) {
 		Mat out;
-		cvtColor(input, out, CV_GRAY2BGR);
+		cvtColor(input, out, cv::COLOR_GRAY2BGR);
 		auto c = candidates[i];
 		c.drawit(out, c.color);
 		imwrite(QString("candidate-%1.png").arg(i).toStdString(), out);
 		c.drawOutlineContrast(input, 5, QString("contrast-%1-%2.png").arg(i).arg(QString::number(c.score)));
-		//waitKey(0);
-	}
-	*/
+		waitKey(0);
+	}*/
+	
 
 	// Scoring
 	sort( candidates.begin(), candidates.end() );
@@ -672,7 +675,7 @@ void PuRe::detect(Pupil &pupil, std::vector<cv::Point2f> &inlierPts) {
 
 #ifdef SAVE_ILLUSTRATION
 	Mat out;
-	cvtColor(input, out, CV_GRAY2BGR);
+	cvtColor(input, out, cv::COLOR_GRAY2BGR);
 	ellipse(out, pupil, Scalar(0,255,0), 2);
 	line(out, Point(pupil.center.x,0), Point(pupil.center.x,out.rows), Scalar(0,255,0), 2);
 	line(out, Point(0,pupil.center.y), Point(out.cols,pupil.center.y), Scalar(0,255,0), 2);

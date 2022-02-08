@@ -38,6 +38,7 @@
 
 #ifndef PURE_H
 #define PURE_H
+//#define SAVE_ILLUSTRATION
 
 
 #include <opencv2/core/mat.hpp>
