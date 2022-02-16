@@ -48,7 +48,8 @@ using namespace std;
 using namespace cv;
 
 PuRe::PuRe() :
-	baseSize(640,480), expectedFrameSize(-1,-1), outlineBias(5) {
+	baseSize(960, 720), expectedFrameSize(-1, -1), outlineBias(5) {
+	//baseSize(640,480), expectedFrameSize(-1,-1), outlineBias(5) {
 	//baseSize(320, 240)
     mDesc = "PuRe (Santini et. al 2018a)";
     mTitle = "PuRe";

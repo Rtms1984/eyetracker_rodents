@@ -25,8 +25,7 @@ public:
 private:
 	unsigned int numCameras;
 	void PrintBuildInfo(void);
-	Pylon::CBaslerUniversalInstantCamera** pcameras;
-	//Pylon::CGrabResultPtr** ptrGrabResult;
+//	Pylon::CBaslerUniversalInstantCamera** pcameras;
 	bool EnableView;
 	double globalTime = 0.;
 };
