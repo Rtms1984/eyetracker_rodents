@@ -41,7 +41,7 @@ typedef struct mystructtag1
 
 	float VerticalCenterTh;
 	float TotalHeightDiffTh;
-	int YRange; 
+	int YRange;
 	int YStep;
 	bool ShowEdges;
 	// search for edges of the pupil
@@ -79,7 +79,7 @@ xcoords findXCoords(Pupil pupil, float y) {
 	float h = pupil.center.x;
 	float k = pupil.center.y;
 	float A = pupil.angle / 180. * PI;
-	float a = pupil.width() / 2.; 
+	float a = pupil.width() / 2.;
 	float b = pupil.height() / 2.;
 	float CA = cos(A);
 	float SA = sin(A);
@@ -114,7 +114,7 @@ xcoords findXCoords(Pupil pupil, float y) {
 }
 
 int isCouplePupilValid(Pupil pL, Pupil pR, params par) {
-	
+
 	if (abs(pL.center.y - pR.center.y) > par.VerticalCenterTh)
 		return -1;
 
@@ -142,20 +142,20 @@ Point2f findBestEdge1D_raw(Mat gray, Point2f P, int half_range, int offy) {
 
 	int diff;
 	int maxDiff = -1;
-	int x_=0;
+	int x_ = 0;
 	if (((half_range + px + 1) >= cols) || ((-half_range + px) <= 0))
 		return Point2f(0., 0.);
 
 	for (int x = -half_range; x < half_range; x++) {
-		int g1 = (int)gray.at<uchar>(P.y-offy, x + px+1); // offy should be 0, here just for test 
-		int g2 = (int)gray.at<uchar>(P.y-offy, x + px);
+		int g1 = (int)gray.at<uchar>(P.y - offy, x + px + 1); // offy should be 0, here just for test 
+		int g2 = (int)gray.at<uchar>(P.y - offy, x + px);
 		diff = abs((int)g1 - (int(g2)));
 		if (diff > maxDiff) {
 			maxDiff = diff;
 			x_ = x;
 		}
 	}
-	return Point2f(x_+px, P.y);
+	return Point2f(x_ + px, P.y);
 }
 
 // search inside a neighbour of the pixel P in horizontal range  to find the best  edge position with a subpixel accuray
@@ -350,13 +350,13 @@ vector<couple> findCouples(Mat gray, Pupil pL, Pupil pR, params par, int mode, i
 		vector<double> xsubpixel = subPixelHorizontalGradMax(&x_, &y_, &gray, sigmax, sigmay, half_windowsize_search, half_windowsize_fit);
 
 		// reshaping the results
-		for (int i = 0; i < x_.size(); i+=4) {
+		for (int i = 0; i < x_.size(); i += 4) {
 			couple co;
 			co.P_L = Point2f(xsubpixel[i], (float)y_[i]); // left  image  left border
-			co.P_R = Point2f(xsubpixel[i+1], (float)y_[i+1]+offy); // right image  left border
+			co.P_R = Point2f(xsubpixel[i + 1], (float)y_[i + 1] + offy); // right image  left border
 			v.push_back(co);
-			co.P_L = Point2f(xsubpixel[i+2], (float)y_[i+2]); // left image  right border
-			co.P_R = Point2f(xsubpixel[i+3], (float)y_[i+3]+offy); // right image  right border
+			co.P_L = Point2f(xsubpixel[i + 2], (float)y_[i + 2]); // left image  right border
+			co.P_R = Point2f(xsubpixel[i + 3], (float)y_[i + 3] + offy); // right image  right border
 			v.push_back(co);
 		}
 		return v;
@@ -377,11 +377,11 @@ vector<couple> findCouples(Mat gray, Pupil pL, Pupil pR, params par, int mode, i
 			couple co;
 			co.P_L = Point2f(xcL.x1, (float)yy); // from analitic intersection
 			co.P_R = Point2f(xcR.x1, (float)yy);
-			if (mode == 0) 
+			if (mode == 0)
 				v.push_back(co);
 			else if (mode == 1) {
-				Point2f P_L = findBestEdge1D_raw(gray, co.P_L, range_,0); // from raw search in the +,- range along horizontal
-				Point2f P_R = findBestEdge1D_raw(gray, co.P_R, range_,offy);
+				Point2f P_L = findBestEdge1D_raw(gray, co.P_L, range_, 0); // from raw search in the +,- range along horizontal
+				Point2f P_R = findBestEdge1D_raw(gray, co.P_R, range_, offy);
 				couple co2;
 				co2.P_L = P_L;
 				co2.P_R = P_R;
@@ -398,8 +398,8 @@ vector<couple> findCouples(Mat gray, Pupil pL, Pupil pR, params par, int mode, i
 			if (mode == 0)
 				v.push_back(co);
 			else if (mode == 1) {
-				Point2f P_L = findBestEdge1D_raw(gray, co.P_L, range_,0);
-				Point2f P_R = findBestEdge1D_raw(gray, co.P_R, range_,offy);
+				Point2f P_L = findBestEdge1D_raw(gray, co.P_L, range_, 0);
+				Point2f P_R = findBestEdge1D_raw(gray, co.P_R, range_, offy);
 				couple co2;
 				co2.P_L = P_L;
 				co2.P_R = P_R;
@@ -412,7 +412,7 @@ vector<couple> findCouples(Mat gray, Pupil pL, Pupil pR, params par, int mode, i
 	return v;
 }
 
-int readCalibFile(Mat &CM1, Mat &CM2, Mat &D1, Mat &D2, Mat &R1, Mat &R2, Mat &P1, Mat &P2 ) {
+int readCalibFile(Mat& CM1, Mat& CM2, Mat& D1, Mat& D2, Mat& R1, Mat& R2, Mat& P1, Mat& P2) {
 
 	FileStorage fs;
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//fake_eye//experiment_2021-6-29_12-4-33_fake_eye//stereocalib_org.yml", FileStorage::READ);
@@ -426,7 +426,7 @@ int readCalibFile(Mat &CM1, Mat &CM2, Mat &D1, Mat &D2, Mat &R1, Mat &R2, Mat &P
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//EyeTracker_Basler_EdgeDetection_SubPixel//EyeTracker//EyeTracker//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//10 december//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//27 january//stereocalib.yml", FileStorage::READ);
-	fs.open("C://Users//Andrea Perissinotto//Desktop//4 february//stereocalib.yml", FileStorage::READ);
+	fs.open("E://DATI//SISSA//video_2022-02-02//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//fake_eye//experiment_2022-1-14_16-32-57_fake_eye//stereocalib.yml", FileStorage::READ);
 	if (fs.isOpened()) {
 		fs["CM1"] >> CM1;
@@ -452,38 +452,43 @@ int readCalibFile(Mat &CM1, Mat &CM2, Mat &D1, Mat &D2, Mat &R1, Mat &R2, Mat &P
 //The origin of the world coordinate system is the left camera origin.
 vector<Point3f> triangulatePointsPupil(vector<couple> Couples, Mat& CM1, Mat& CM2, Mat& D1, Mat& D2, Mat& R1, Mat& R2, Mat& P1, Mat& P2, int widthIm) {
 
-		// Transforms points in both camera images to real world coordinates
-		vector<Point2f> undistCornerPointsBuf, undistCornerPointsBufSecondary;
+	// Transforms points in both camera images to real world coordinates
+	vector<Point2f> undistCornerPointsBuf, undistCornerPointsBufSecondary;
 
-		int N = Couples.size();
-		Mat imagePoints1(N, 2, CV_32F);
-		Mat imagePoints2(N, 2, CV_32F);
+	int N = Couples.size();
+	Mat imagePoints1(N, 2, CV_32F);
+	Mat imagePoints2(N, 2, CV_32F);
 
-		for (int i = 0; i < N; i++) {
-			imagePoints1.at<float>(i, 0) = Couples[i].P_L.x;
-			imagePoints1.at<float>(i, 1) = Couples[i].P_L.y;
-			imagePoints2.at<float>(i, 0) = Couples[i].P_R.x - widthIm;
-			imagePoints2.at<float>(i, 1) = Couples[i].P_R.y;
-		}
+	for (int i = 0; i < N; i++) {
+		imagePoints1.at<float>(i, 0) = Couples[i].P_L.x;
+		imagePoints1.at<float>(i, 1) = Couples[i].P_L.y;
+		imagePoints2.at<float>(i, 0) = Couples[i].P_R.x - widthIm;
+		imagePoints2.at<float>(i, 1) = Couples[i].P_R.y;
+	}
 
-		undistortPoints(imagePoints1, undistCornerPointsBuf, CM1, D1, R1, P1);
-		undistortPoints(imagePoints2, undistCornerPointsBufSecondary, CM2, D2, R2, P2);
-	
-		Mat homogenPoints(4, N, CV_32F);
-	
-		triangulatePoints(P1, P2, undistCornerPointsBuf, undistCornerPointsBufSecondary, homogenPoints);
-	
-		vector<Point3f> worldPoints(N);
-	
-		// Output of triangulate points are in homogenous coordinates, convert to cartesian
-		for (int i = 0; i < homogenPoints.cols; i++) {
-			float scale = homogenPoints.at<float>(3, i) != 0.f ? homogenPoints.at<float>(3, i) : 1.f;
-			worldPoints.at(i).x = homogenPoints.at<float>(0, i) / scale;
-			worldPoints.at(i).y = homogenPoints.at<float>(1, i) / scale;
-			worldPoints.at(i).z = homogenPoints.at<float>(2, i) / scale;
-		}
+	Mat homogenPoints(4, N, CV_32F);
 
-		return worldPoints;
+	//undistortPoints(imagePoints1, undistCornerPointsBuf, CM1, D1, R1, P1);
+	//undistortPoints(imagePoints2, undistCornerPointsBufSecondary, CM2, D2, R2, P2);
+
+	// Not necessary to undistort !!  we are reading undistorted images.
+	for (int i = 0; i < N; i++) {
+		undistCornerPointsBuf.push_back(Point2f(Couples[i].P_L.x, Couples[i].P_L.y));
+		undistCornerPointsBufSecondary.push_back(Point2f(Couples[i].P_R.x - widthIm, Couples[i].P_R.y));
+	}
+	triangulatePoints(P1, P2, undistCornerPointsBuf, undistCornerPointsBufSecondary, homogenPoints);
+
+	vector<Point3f> worldPoints(N);
+
+	// Output of triangulate points are in homogenous coordinates, convert to cartesian
+	for (int i = 0; i < homogenPoints.cols; i++) {
+		float scale = homogenPoints.at<float>(3, i) != 0.f ? homogenPoints.at<float>(3, i) : 1.f;
+		worldPoints.at(i).x = homogenPoints.at<float>(0, i) / scale;
+		worldPoints.at(i).y = homogenPoints.at<float>(1, i) / scale;
+		worldPoints.at(i).z = homogenPoints.at<float>(2, i) / scale;
+	}
+
+	return worldPoints;
 
 }
 
@@ -494,7 +499,7 @@ void plot3D(const vector<Point3f>& Pts, vector<double>& bestDist, PupilLocation 
 	//
 	ofstream myfile;
 	myfile.open("Points3D_sp.txt");
-	for (int i=0; i < Pts.size(); i++) {
+	for (int i = 0; i < Pts.size(); i++) {
 		myfile << Pts[i].x << ", " << Pts[i].y << ", " << Pts[i].z << ", " << bestDist[i] << "\n";
 	}
 	myfile << result.bar.x << ", " << result.bar.y << ", " << result.bar.z << ", " << 0. << "\n"; // penulitma riga baricentro
@@ -503,15 +508,15 @@ void plot3D(const vector<Point3f>& Pts, vector<double>& bestDist, PupilLocation 
 }
 
 // find a 3D plane passing nearby the points,  ransac
-PupilLocation findPlane(const vector<Point3f> &Pts, planeFitPar Par) {
+PupilLocation findPlane(const vector<Point3f>& Pts, planeFitPar Par) {
 
-	double iterazioni = log(1.0 - Par.probGood) / log(1.0 -  pow(Par.w ,Par.np));
+	double iterazioni = log(1.0 - Par.probGood) / log(1.0 - pow(Par.w, Par.np));
 	double stditer = sqrt(1.0 - pow(Par.w, Par.np)) / pow(Par.w, Par.np);
 	iterazioni = (int)ceil(iterazioni + 2 * stditer);
 
 	int N = Pts.size();
 	vector<int> index;
-	for (int i = 0; i < N; i++) 
+	for (int i = 0; i < N; i++)
 		index.push_back(i);
 
 	int maxIn = -100000000; // to be always true at the beginning
@@ -526,7 +531,7 @@ PupilLocation findPlane(const vector<Point3f> &Pts, planeFitPar Par) {
 		Point3f X2 = Pts[permutation[1]];
 		Point3f X3 = Pts[permutation[2]];
 
-		Point3f vn = (X2-X1).cross(X3-X1);
+		Point3f vn = (X2 - X1).cross(X3 - X1);
 		double n = cv::norm(vn);
 		if (n > 0.000001)
 			vn = vn / n;
@@ -550,7 +555,7 @@ PupilLocation findPlane(const vector<Point3f> &Pts, planeFitPar Par) {
 			bestDist = dist;
 		}
 	}
-	
+
 	float score = (float)maxIn / N;
 
 	// least square refinement
@@ -559,7 +564,7 @@ PupilLocation findPlane(const vector<Point3f> &Pts, planeFitPar Par) {
 	double mz = 0.;
 	vector<Point3f> PtsIn;  // create the vector of inliers
 	for (int i = 0; i < bestIndexes.size(); i++) {
-//		PtsIn.push_back(Pts[bestIndexes[i]]);
+		//		PtsIn.push_back(Pts[bestIndexes[i]]);
 		mx += Pts[bestIndexes[i]].x;
 		my += Pts[bestIndexes[i]].y;
 		mz += Pts[bestIndexes[i]].z;
@@ -576,6 +581,9 @@ PupilLocation findPlane(const vector<Point3f> &Pts, planeFitPar Par) {
 		A.at<float>(i, 2) = Pts[bestIndexes[i]].z - mz;
 	}
 
+
+
+
 	Mat w, u, vt;
 	SVD::compute(A, w, u, vt); //w = singular values, u = left sing vectors, vt= transpose of right sing vectors
 
@@ -588,16 +596,27 @@ PupilLocation findPlane(const vector<Point3f> &Pts, planeFitPar Par) {
 	//double dx = vt.at<float>(0, idxMin);
 	//double dy = vt.at<float>(1, idxMin);
 	//double dz = vt.at<float>(2, idxMin);
-	double dx = vt.at<float>(idxMin,0);
-	double dy = vt.at<float>(idxMin,1);
-	double dz = vt.at<float>(idxMin,2);
+	double dx = vt.at<float>(idxMin, 0);
+	double dy = vt.at<float>(idxMin, 1);
+	double dz = vt.at<float>(idxMin, 2);
 	if (dz > 0) {
 		dx = -dx; dy = -dy; dz = -dz;
 	}
 
+
+	// save the set of good 3D points of this frame 
+	ofstream my3DGoodPoints;
+	my3DGoodPoints.open("Points3D_lastFrame.txt");
+	for (int i = 0; i < bestIndexes.size(); i++) {
+		my3DGoodPoints << (Pts[bestIndexes[i]].x - mx) << ", " << (Pts[bestIndexes[i]].y - my) << ", " << (Pts[bestIndexes[i]].z - mz) << "\n";
+	}
+	//	my3DGoodPoints << mx << ", " << my << ", " << mz << "\n";
+	my3DGoodPoints << dx << ", " << dy << ", " << dz << "\n";
+	my3DGoodPoints.close();
+
 	PupilLocation result;
 	result.bar = Point3f(mx, my, mz);
-	result.dir = Point3f(dx, dy, dz); 
+	result.dir = Point3f(dx, dy, dz);
 
 	//plot3D(Pts, bestDist, result);
 	cout << "score " << score << "     maxIn / N " << maxIn << " / " << N << "  ";
@@ -643,7 +662,7 @@ void write_params() {
 
 
 	if (fs.isOpened()) {
-		fs 	<< "userMinPupilDiameterPx" << userMinPupilDiameterPx
+		fs << "userMinPupilDiameterPx" << userMinPupilDiameterPx
 			<< "userMaxPupilDiameterPx" << userMaxPupilDiameterPx
 			<< "TotalHeightDiffTh" << TotalHeightDiffTh
 			<< "VerticalCenterTh " << VerticalCenterTh
@@ -654,7 +673,7 @@ void write_params() {
 			<< "probGood" << probGood
 			<< "wRatio" << wRatio
 			<< "np" << np
-			<< "maxIterations" <<maxIterations
+			<< "maxIterations" << maxIterations
 			<< "halfXEdgeRange" << half_x_search
 			<< "halfXPeak" << half_x_peak
 			<< "nonEdgePixRatio" << nonEdgePixRatio;// 19.01.2022
@@ -662,7 +681,7 @@ void write_params() {
 	fs.release();
 }
 
-int read_params(params &p, planeFitPar &pf) {
+int read_params(params& p, planeFitPar& pf) {
 
 	FileStorage fs;
 	string DataPath = "";
@@ -721,7 +740,7 @@ bool plotPupilBorder(Mat& view, Pupil pupil_, bool showPupilCenter) {
 //
 // PLOT  vector of gaze direction
 //
-void plotGazeDirection(Mat &view, PupilLocation &pLoc, Mat P1, Mat P2) {
+void plotGazeDirection(Mat& view, PupilLocation& pLoc, Mat P1, Mat P2) {
 
 	int rows = view.rows;
 	int cols = view.cols;
@@ -772,7 +791,7 @@ void plotGazeDirection(Mat &view, PupilLocation &pLoc, Mat P1, Mat P2) {
 }
 
 // 
-void plotZoom(Mat& gray, Pupil& pupil, vector<couple> &myCouples, int RL, int mL, float RFactor)
+void plotZoom(Mat& gray, Pupil& pupil, vector<couple>& myCouples, int RL, int mL, float RFactor)
 {
 	// plot dello zoom sul pattern
 	int center_x = pupil.center.x;
@@ -789,7 +808,7 @@ void plotZoom(Mat& gray, Pupil& pupil, vector<couple> &myCouples, int RL, int mL
 		if (RL == 0)
 			for (int tt = 0; tt < myCouples.size(); tt++) {
 				//notare che si aggiunge mezzo pixel per tenere conto del centro del pixel
-				cv::Point2f PtZ = cv::Point2f(roundf((myCouples[tt].P_L.x  - offset_x + .5) * RFactor), roundf((myCouples[tt].P_L.y - offset_y + .5) * RFactor));
+				cv::Point2f PtZ = cv::Point2f(roundf((myCouples[tt].P_L.x - offset_x + .5) * RFactor), roundf((myCouples[tt].P_L.y - offset_y + .5) * RFactor));
 				circle(zoomResized, PtZ, 1, Scalar(0, 255, 0), 1, 8, 0);
 				circle(zoomResized, cv::Point2f(roundf((center_x - offset_x + .5) * RFactor), roundf((center_y - offset_y + .5) * RFactor)), 1, Scalar(0, 255, 0), 1, 8, 0);
 			}
@@ -802,7 +821,7 @@ void plotZoom(Mat& gray, Pupil& pupil, vector<couple> &myCouples, int RL, int mL
 			}
 
 
-		if (RL==0)
+		if (RL == 0)
 			imshow("Zoom L", zoomResized);
 		if (RL == 1)
 			imshow("Zoom R", zoomResized);
@@ -825,7 +844,7 @@ int main(int argc, char* argv[])
 
 	//write_params();
 
-	PuRe *myPuRe = new PuRe();
+	PuRe* myPuRe = new PuRe();
 
 #ifdef USING_FILE
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\Modified Basler\\EyeTracker\\EyeTracker\\video_2021-7-6_10-41-32.avi");
@@ -846,7 +865,9 @@ int main(int argc, char* argv[])
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-28_10-10-39.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-27_10-18-30.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-2-2_11-42-17.avi");
-	VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-2-4_11-11-18.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-2-4_11-11-18.avi");
+
+	VideoCapture cap("E:\\DATI\\SISSA\\video_2022-02-02\\video_2022-2-2_11-42-17.avi");
 	if (!cap.isOpened())
 	{
 		cout << "Could not open the output video for write: " << endl;
@@ -860,9 +881,9 @@ int main(int argc, char* argv[])
 #ifdef USING_CAMERA
 
 	VideoCapture cap;
-	 //open the default camera using default API
-	//cap.open(0);
-	// OR advance usage: select any API backend
+	//open the default camera using default API
+   //cap.open(0);
+   // OR advance usage: select any API backend
 	int deviceID = 0;             // 0 = open default camera
 	int apiID = cv::CAP_ANY;      // 0 = autodetect default API
 								  // open selected camera using selected API
@@ -871,11 +892,11 @@ int main(int argc, char* argv[])
 
 	//cap.open(0, apiID);
 	// check if we succeeded
-	for (int iC=0; iC < 10000; ++iC) {
+	for (int iC = 0; iC < 10000; ++iC) {
 		cap.open(iC);
 		if (!cap.isOpened()) {
-			cerr << "ERROR! Unable to open camera id = " << iC << "\n" ;
-//			return -1;
+			cerr << "ERROR! Unable to open camera id = " << iC << "\n";
+			//			return -1;
 		}
 		else {
 			deviceID = iC;
@@ -896,7 +917,7 @@ int main(int argc, char* argv[])
 
 	VideoWriter outputVideo; // Open the output
 	int fps = 12;
-    //outputVideo.open("output_test.avi", VideoWriter::fourcc('D', 'I', 'B', ' '), fps, S, true); // senza compressione 
+	//outputVideo.open("output_test.avi", VideoWriter::fourcc('D', 'I', 'B', ' '), fps, S, true); // senza compressione 
 	outputVideo.open("output_test_w.avi", VideoWriter::fourcc('H', 'F', 'Y', 'U'), fps, S, true); // senza compressione 
 
 
@@ -904,13 +925,13 @@ int main(int argc, char* argv[])
 	Pupil pupil_R = Pupil();
 
 
-	Mat CM1, CM2, D1,D2,R1,R2,P1,P2;
+	Mat CM1, CM2, D1, D2, R1, R2, P1, P2;
 	res = readCalibFile(CM1, CM2, D1, D2, R1, R2, P1, P2);
 
 	int it = 0;
 	int sigma_slider1;
 	int sigma_slider2;
-	float userMinPupilDiameterPx = param.userMinPupilDiameterPx; 
+	float userMinPupilDiameterPx = param.userMinPupilDiameterPx;
 	float userMaxPupilDiameterPx = param.userMaxPupilDiameterPx;
 	namedWindow("image", 1);
 	int alpha_slider_max = 200;
@@ -978,7 +999,7 @@ int main(int argc, char* argv[])
 		userMaxPupilDiameterPx = float(sigma_slider2);
 
 		// check validity diameters
-		if (userMinPupilDiameterPx > (userMaxPupilDiameterPx+1)) {
+		if (userMinPupilDiameterPx > (userMaxPupilDiameterPx + 1)) {
 			CV_Assert(0);
 			//userMinPupilDiameterPx = userMaxPupilDiameterPx;
 			//setTrackbarPos("min Pupil diam", "image", (int)(userMinPupilDiameterPx));
@@ -989,7 +1010,7 @@ int main(int argc, char* argv[])
 		//
 		Rect roi(0, 0, cols / 2, rows);
 		//myPuRe->run(gray, roi, pupil_L, userMinPupilDiameterPx, userMaxPupilDiameterPx);
-		Mat cropped_image = gray(Range(0, rows), Range(0, cols/2));
+		Mat cropped_image = gray(Range(0, rows), Range(0, cols / 2));
 		//myPuRe->run(cropped_image, pupil_L);
 		myPuRe->LR = (param.ShowEdges) ? 1 : 0;
 		myPuRe->nonEdgePixRatio = param.nonEdgePixRatio; // 19.01.2022
@@ -1018,7 +1039,7 @@ int main(int argc, char* argv[])
 
 		imshow("image", view);
 		key = pollKey();
-		key = waitKey(0);
+		//key = waitKey(0);
 
 
 
@@ -1047,13 +1068,13 @@ int main(int argc, char* argv[])
 			plotZoom(gray, pupil_R, myCouples, 1, 50, 4.0);
 		}
 
-		plotGazeDirection(view, pLoc,P1,P2);
+		plotGazeDirection(view, pLoc, P1, P2);
 		imshow("image", view);
 
 
 		key = pollKey();
 		//key = waitKey(1000);
-		key = waitKey(0);
+		//key = waitKey(0);
 
 		clock_t start2 = clock();
 		double elapsed_secs = double(start2 - start1) / CLOCKS_PER_SEC;
