@@ -27,6 +27,7 @@
 #include "GUIUtils.h"
 #include "StereoCams.h"
 #include "Calibration.h"
+#include "StereoImageEventHandler.h"
 #include <pylon/PylonIncludes.h>
 
 
@@ -338,8 +339,8 @@ vector<couple> findCouples(Mat gray, Pupil pL, Pupil pR, params par, int mode, i
 
 		double sigmax = 1.; // of the Gaussian filter emplyed for computing the gradient
 		double sigmay = 1.; // of the Gaussian filter emplyed for computing the gradient
-		int half_windowsize_search = 5; //for searching the maximum along x
-		int half_windowsize_fit = 3; //for for fitting the parabola
+		int half_windowsize_search = par.half_x_search; //for searching the maximum along x
+		int half_windowsize_fit = par.half_x_peak; //for for fitting the parabola
 
 		// preparing the x_ and y_ vectors
 		for (int yy = pL.center.y - par.YRange; yy < (pL.center.y + par.YRange); yy += par.YStep) {
@@ -691,7 +692,9 @@ int read_params(params& p, planeFitPar& pf) {
 
 	FileStorage fs;
 	string DataPath = "";
-	fs.open(DataPath + "\settings_PDetector.yml", FileStorage::READ);
+	//fs.open(DataPath + "\settings_PDetector.yml", FileStorage::READ);
+	//fs.open(DataPath + "\settings_PDetector_rat.yml", FileStorage::READ);
+	fs.open(DataPath + "\settings_PDetector_rat.yml", FileStorage::READ);
 	if (fs.isOpened()) {
 
 		fs["userMinPupilDiameterPx"] >> p.userMinPupilDiameterPx;
@@ -1352,13 +1355,13 @@ int StereoCalibration(){
 	//Calibration myCalib2(.537f, 8, 6, "Calib2_5percento.yml"); // checkboard 5%  originale
 	//Calibration myCalib1(.214f, 8, 6, "Calib1_2percento.yml"); // checkboard 2%  originale
 	//Calibration myCalib2(.214f, 8, 6, "Calib2_2percento.yml"); // checkboard 2%  originale
-	//Calibration myCalib1(.200f, 8, 6, "Calib1_2percento.yml"); // checkboard 2%  17.06.2021
-	//Calibration myCalib2(.200f, 8, 6, "Calib2_2percento.yml"); // checkboard 2%  17.06.2021
+	//Calibration myCalib1(.200f, 8, 6, "Calib1_2percento.yml"); // checkboard 2%  01.04.2022
+	//Calibration myCalib2(.200f, 8, 6, "Calib2_2percento.yml"); // checkboard 2%  01.04.2022
 	//Calibration myCalib1((.10889f), 8, 6, "Calib1_1percento.yml"); // checkboard 1%  originale
 	//Calibration myCalib2((.10889f), 8, 6, "Calib2_1percento.yml"); // checkboard 1%  originale
 	//Calibration objCalib((.10889f), 8, 6, "objCalib_1percento.yml");
-	//Calibration myCalib1((.13149f), 10, 7, "Calib1_1percento.yml"); // checkboard 1%  8*11
-	//Calibration myCalib2((.13149f), 10, 7, "Calib2_1percento.yml"); // checkboard 1%  8*11
+	//Calibration myCalib1((.13149f), 12, 9, "Calib1_1percento.yml"); // checkboard 1%  8*11
+	//Calibration myCalib2((.13149f), 12, 9, "Calib2_1percento.yml"); // checkboard 1%  8*11
 	//Calibration objCalib((.13149f), 10, 7, "objCalib_1percento.yml");
 	Calibration myCalib1((.0995f), 9, 6, "Calib1_1percento.yml"); // checkboard 1%  7*10
 	Calibration myCalib2((.0995f), 9, 6, "Calib2_1percento.yml"); // checkboard 1%  7*10
@@ -1563,6 +1566,7 @@ int StereoCalibration(){
 	Mat Q = Mat(4, 4, CV_64F);
 	//stereoRectify(myCalib1.cameraMatrix, myCalib1.distCoeffs, myCalib2.cameraMatrix, myCalib2.distCoeffs, img1.size(), R, T, R1, R2, P1, P2, Q, 0);
 	stereoRectify(CM1, D1, CM2, D2, img1.size(), R, T, R1, R2, P1, P2, Q, 0);
+	// , cv::CALIB_ZERO_DISPARITY
 	cout << "Done calc rectification" << endl;
 	printMatrix(3, 3, R1, "R1");
 	printMatrix(3, 3, R2, "R2");
@@ -1850,8 +1854,8 @@ int	DoStereoAVI(bool rectified){
 	int k = 0;
 	myStereo.glFrame = 0;
 
-	cout << "Press a key to start recording" << endl;
-	waitKey(0);
+	//cout << "Press a key to start recording" << endl;
+	//waitKey(0);
 	PuRe* myPuRe = new PuRe();
 
 	params param; // param alignment and PuRe and general purpose
@@ -1879,10 +1883,10 @@ int	DoStereoAVI(bool rectified){
 
 	while (reskey != 'q') {
 
-		double msecs;
-		reskey = myStereo.GetFrames(FactorResize, msecs);
+		//double msecs;
+		reskey = myStereo.GetFrames(FactorResize, ms);
 		//cout << "elapsed time (msec)" << msecs << endl;
-		if (msecs > 1000) // è trascorso piu di un secondo dall'ultimo frame
+		if (ms > 1000) // è trascorso piu di un secondo dall'ultimo frame
 		{
 			// inserisci un frame nero
 			Mat nero = Mat::zeros(S, CV_8UC1);
@@ -1893,7 +1897,7 @@ int	DoStereoAVI(bool rectified){
 		cvtColor(myStereo.view0, viewGray0, cv::COLOR_BGR2GRAY);
 		Mat viewGray1;
 		cvtColor(myStereo.view1, viewGray1, cv::COLOR_BGR2GRAY);
-
+		
 		// undistort
 		Size S_(w, h);
 		Mat UviewGray0(S_, viewGray0.type());
@@ -1931,6 +1935,8 @@ int	DoStereoAVI(bool rectified){
 
 		Mat view;
 		cvtColor(composite, view, cv::COLOR_GRAY2BGR);
+		putText(view, to_string(myStereo.frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.9, CV_RGB(0, 0, 255), 1, 8, false);
+		putText(view, to_string(myStereo.frame1), cv::Point(40 + w, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.9, CV_RGB(0, 0, 255), 1, 8, false);
 		outputVideo.write(view);
 
 		// update from GUI
@@ -1974,8 +1980,8 @@ int	DoStereoAVI(bool rectified){
 		pupil_R.center.y += offy; // because the images are not correctly aligned since the calibration is not good. It should be 0. ( x Sogand )
 		if (plotPupilBorder(view, pupil_R, showPupilCenter))
 			continue;
-
 		imshow("image", view);
+		//waitKey(1000);
 		//outputVideo.write(view);
 		char key = pollKey();
 
@@ -2016,7 +2022,6 @@ int	DoStereoAVI(bool rectified){
 		cout << "FPS " << actualFrRate << endl;
 		myfile << pLoc.bar.x << ", " << pLoc.bar.y << ", " << pLoc.bar.z << ", " << pLoc.dir.x << ", " << pLoc.dir.y << ", " << pLoc.dir.z << "\n";
 		//// 
-
 
 		//imshow("composito", composite);	waitKey(1);
 		//outputVideo.write(view);
