@@ -425,8 +425,7 @@ int readCalibFile(Mat& CM1, Mat& CM2, Mat& D1, Mat& D2, Mat& R1, Mat& R2, Mat& P
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//fake_eye//experiment_2021-11-3_17-27-47_fake_eye//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//EyeTracker_Basler_EdgeDetection_SubPixel//EyeTracker//EyeTracker//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//10 december//stereocalib.yml", FileStorage::READ);
-	//fs.open("C://Users//Andrea Perissinotto//Desktop//27 january//stereocalib.yml", FileStorage::READ);
-	fs.open("E://DATI//SISSA//video_2022-02-02//stereocalib.yml", FileStorage::READ);
+	fs.open("C://Users//Andrea Perissinotto//Desktop//27 january//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//fake_eye//experiment_2022-1-14_16-32-57_fake_eye//stereocalib.yml", FileStorage::READ);
 	if (fs.isOpened()) {
 		fs["CM1"] >> CM1;
@@ -874,13 +873,11 @@ int main(int argc, char* argv[])
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-24_10-26-58.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-21_10-26-19.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\fake_eye\\experiment_2022-1-14_16-32-57_fake_eye\\video_2022-1-14_16-32-57.avi");
-	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-27_10-4-54.avi");
+	VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\videos\\video_2022-1-27_10-4-54.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-28_10-10-39.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-27_10-18-30.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-2-2_11-42-17.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-2-4_11-11-18.avi");
-
-	VideoCapture cap("E:\\DATI\\SISSA\\video_2022-02-02\\video_2022-2-2_11-42-17.avi");
 	if (!cap.isOpened())
 	{
 		cout << "Could not open the output video for write: " << endl;
@@ -1131,4 +1128,4 @@ int main(int argc, char* argv[])
 //		imshow("image", view);
 //		key = waitKey(0);
 //	}
-//}
+//} 
