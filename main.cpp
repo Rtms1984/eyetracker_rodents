@@ -508,7 +508,7 @@ void plot3D(const vector<Point3f>& Pts, vector<double>& bestDist, PupilLocation 
 }
 
 // find a 3D plane passing nearby the points,  ransac
-PupilLocation findPlane(const vector<Point3f>& Pts, planeFitPar Par) {
+PupilLocation findPlane(const vector<Point3f>& Pts, planeFitPar Par, vector<Point3f>& PtsOnPlane) {
 
 	double iterazioni = log(1.0 - Par.probGood) / log(1.0 - pow(Par.w, Par.np));
 	double stditer = sqrt(1.0 - pow(Par.w, Par.np)) / pow(Par.w, Par.np);
@@ -620,6 +620,13 @@ PupilLocation findPlane(const vector<Point3f>& Pts, planeFitPar Par) {
 
 	//plot3D(Pts, bestDist, result);
 	cout << "score " << score << "     maxIn / N " << maxIn << " / " << N << "  ";
+
+	// 12.04.2022  projection of the good points on the plane
+	for (int i = 0; i < bestIndexes.size(); i++) {
+		double prSc = dx * (Pts[bestIndexes[i]].x - mx) + dy * (Pts[bestIndexes[i]].y - my) + dz * (Pts[bestIndexes[i]].z - mz);
+		PtsOnPlane.push_back(Point3f(Pts[bestIndexes[i]].x + dx * prSc, Pts[bestIndexes[i]].y + dy * prSc, Pts[bestIndexes[i]].z + dz * prSc));
+	}
+
 	return result;
 }
 
@@ -791,7 +798,7 @@ void plotGazeDirection(Mat& view, PupilLocation& pLoc, Mat P1, Mat P2) {
 }
 
 // 
-void plotZoom(Mat& gray, Pupil& pupil, vector<couple>& myCouples, int RL, int mL, float RFactor)
+void plotZoom(Mat& gray, Pupil& pupil, vector<couple>& myCouples, int RL, int mL, float RFactor, vector<Point2f>& ptsOnPlane2D)
 {
 	// plot dello zoom sul pattern
 	int center_x = pupil.center.x;
@@ -811,6 +818,9 @@ void plotZoom(Mat& gray, Pupil& pupil, vector<couple>& myCouples, int RL, int mL
 				cv::Point2f PtZ = cv::Point2f(roundf((myCouples[tt].P_L.x - offset_x + .5) * RFactor), roundf((myCouples[tt].P_L.y - offset_y + .5) * RFactor));
 				circle(zoomResized, PtZ, 1, Scalar(0, 255, 0), 1, 8, 0);
 				circle(zoomResized, cv::Point2f(roundf((center_x - offset_x + .5) * RFactor), roundf((center_y - offset_y + .5) * RFactor)), 1, Scalar(0, 255, 0), 1, 8, 0);
+
+				cv::Point2f Pt = cv::Point2f(roundf((ptsOnPlane2D[tt].x - offset_x + .5) * RFactor), roundf((ptsOnPlane2D[tt].y - offset_y + .5) * RFactor));
+				circle(zoomResized, Pt, 1, Scalar(0, 255, 255), 1, 8, 0);
 			}
 		if (RL == 1)
 			for (int tt = 0; tt < myCouples.size(); tt++) {
@@ -818,6 +828,9 @@ void plotZoom(Mat& gray, Pupil& pupil, vector<couple>& myCouples, int RL, int mL
 				cv::Point2f PtZ = cv::Point2f(roundf((myCouples[tt].P_R.x - offset_x + .5) * RFactor), roundf((myCouples[tt].P_R.y - offset_y + .5) * RFactor));
 				circle(zoomResized, PtZ, 1, Scalar(0, 255, 0), 1, 8, 0);
 				circle(zoomResized, cv::Point2f(roundf((center_x - offset_x + .5) * RFactor), roundf((center_y - offset_y + .5) * RFactor)), 1, Scalar(0, 255, 0), 1, 8, 0);
+
+				cv::Point2f Pt = cv::Point2f(roundf((ptsOnPlane2D[tt].x - offset_x + .5) * RFactor), roundf((ptsOnPlane2D[tt].y - offset_y + .5) * RFactor));
+				circle(zoomResized, Pt, 1, Scalar(0, 255, 255), 1, 8, 0);
 			}
 
 
@@ -1060,12 +1073,28 @@ int main(int argc, char* argv[])
 		vector<Point3f> Pupil3D = triangulatePointsPupil(myCouples, CM1, CM2, D1, D2, R1, R2, P1, P2, cols / 2);
 
 		// find the plane in 3D of the pupil border pixels
-		PupilLocation pLoc = findPlane(Pupil3D, fitParams);
+		// and projecting the 3D points on the plane, obaining PtsOnPlane3D
+		vector<Point3f> PtsOnPlane3D;
+		PupilLocation pLoc = findPlane(Pupil3D, fitParams, PtsOnPlane3D);
+
+		// project PtsOnPlane on the image
+		//Mat AA = Mat::eye(3,3,CV_32F);
+		//Mat rvec;
+		//Rodrigues(AA, rvec); // to have a correct null rotation vector
+		Mat rvec(3, 1, DataType<double>::type, 0.f);
+		Mat tvec(3, 1, DataType<double>::type, 0.f);
+		std::vector<Point2f> PtsOnPlane2D_1;
+		std::vector<Point2f> PtsOnPlane2D_2;
+		Mat A1 = P1(Rect(0, 0, 3, 3)); // takes only the internals
+		Mat A2 = P2(Rect(0, 0, 3, 3)); // takes only the internals
+		Mat distCoeffsZero(5, 1, DataType<double>::type, 0.f);
+		projectPoints(PtsOnPlane3D, rvec, tvec, A1, distCoeffsZero, PtsOnPlane2D_1);
+		projectPoints(PtsOnPlane3D, rvec, tvec, A2, distCoeffsZero, PtsOnPlane2D_2);
 
 		// plotZoom(gray, pLoc, myCouples, 0=left, 1= right, area from center, rescaling factor);
 		if (param.ShowEdges) {
-			plotZoom(gray, pupil_L, myCouples, 0, 50, 4.0);
-			plotZoom(gray, pupil_R, myCouples, 1, 50, 4.0);
+			plotZoom(gray, pupil_L, myCouples, 0, 50, 4.0, PtsOnPlane2D_1);
+			plotZoom(gray, pupil_R, myCouples, 1, 50, 4.0, PtsOnPlane2D_2);
 		}
 
 		plotGazeDirection(view, pLoc, P1, P2);
