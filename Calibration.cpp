@@ -131,7 +131,7 @@ int Calibration::Calibrate(float rejectFactor, bool objpntflag) {
 		if (mViewOn) {
 			drawChessboardCorners(view, boardSize, Mat(pointBuf), found);
 			imshow("CheckBoard Image", view);
-			waitKey(1);
+			waitKey(10);
 		}
 
 		//cvtColor(rgbview, view, CV_BGR2GRAY);

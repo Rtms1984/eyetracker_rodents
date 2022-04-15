@@ -197,6 +197,14 @@ StereoCams::StereoCams(){
 	// Create an array of instant cameras for the found devices and avoid exceeding a maximum number of devices.
 	ECleanup  cleanupProcedure = Cleanup_Delete;
 
+	if (pcameras.GetSize() > 0) {
+		if (pcameras.IsGrabbing())
+			pcameras.StopGrabbing();
+		pcameras.Close();
+		pcameras.DetachDevice();
+		pcameras.DestroyDevice();
+	}
+
 	// Create and attach all Pylon Devices.
 	for (size_t i = 0; i < pcameras.GetSize(); ++i)
 	{
@@ -230,15 +238,27 @@ StereoCams::StereoCams(){
 	pcameras[0].TriggerMode.SetValue(TriggerMode_On);
 	pcameras[0].TriggerSource.SetValue(TriggerSource_Line3);
 	pcameras[0].ChunkModeActive.SetValue(true);
+	pcameras[0].ChunkSelector.SetValue(ChunkSelector_Timestamp);
+	pcameras[0].ChunkEnable.SetValue(true);
+	pcameras[0].BslChunkTimestampSelector.SetValue(BslChunkTimestampSelector_ExposureStart);
 
 
 	pcameras[1].TriggerSelector.SetValue(TriggerSelector_FrameStart);
 	pcameras[1].TriggerMode.SetValue(TriggerMode_On);
 	pcameras[1].TriggerSource.SetValue(TriggerSource_Line3);
 	pcameras[1].ChunkModeActive.SetValue(true);
+	pcameras[1].ChunkSelector.SetValue(ChunkSelector_Timestamp);
+	pcameras[1].ChunkEnable.SetValue(true);
+	pcameras[1].BslChunkTimestampSelector.SetValue(BslChunkTimestampSelector_ExposureStart);
 
 	pcameras[0].ExposureTime.SetValue(1900.0);
 	pcameras[1].ExposureTime.SetValue(1900.0);
+
+	pcameras[0].TimestampLatch.Execute();
+	pcameras[1].TimestampLatch.Execute();
+
+	startingTimeCamera0 = pcameras[0].TimestampLatchValue.GetValue();
+	startingTimeCamera1 = pcameras[1].TimestampLatchValue.GetValue();
 
 	/*
 	printf("Number of cameras detected: %u\n", numCameras);
@@ -308,6 +328,114 @@ StereoCams::StereoCams(){
 	CamerasReady = true;
 };
 
+//constructor for calibration
+StereoCams::StereoCams(char calib_flag) {
+
+	if (calib_flag == 'c')
+	{
+		//FlyCapture2::Error error;
+
+		CamerasReady = false;
+		//PrintBuildInfo();
+
+		/*BusManager busMgr;
+		error = busMgr.GetNumOfCameras(&numCameras);
+		if (error != PGRERROR_OK)
+		{
+			PrintError(error);
+		}
+		*/
+		//PylonInitialize();
+		//PylonAutoInitTerm();
+
+		// Get the transport layer factory.
+
+		CTlFactory& tlFactory = CTlFactory::GetInstance();
+
+		// Get all attached devices and exit application if no device is found.
+		DeviceInfoList_t devices;
+		if (tlFactory.EnumerateDevices(devices) == 0)
+		{
+			throw RUNTIME_EXCEPTION("No camera present.");
+		}
+
+		if (tlFactory.EnumerateDevices(devices) == 1)
+		{
+			throw RUNTIME_EXCEPTION("Only one camera presents.");
+		}
+		pcameras.Initialize(2);
+		// Create an array of instant cameras for the found devices and avoid exceeding a maximum number of devices.
+		ECleanup  cleanupProcedure = Cleanup_Delete;
+
+		if (pcameras.GetSize() > 0) {
+			if (pcameras.IsGrabbing())
+				pcameras.StopGrabbing();
+			pcameras.Close();
+			pcameras.DetachDevice();
+			pcameras.DestroyDevice();
+		}
+
+		// Create and attach all Pylon Devices.
+		for (size_t i = 0; i < pcameras.GetSize(); ++i)
+		{
+			pcameras[i].Attach(tlFactory.CreateDevice(devices[i]));
+
+			if (pcameras[i].GetSfncVersion() >= Sfnc_2_0_0)
+			{
+				// Print the model name of the camera.
+				cout << "Using device " << pcameras[i].GetDeviceInfo().GetModelName() << endl;
+			}
+
+		}
+
+
+		//pcameras[0].Pylon::CBaslerUniversalInstantCamera::RegisterImageEventHandler(new CImageEventHandler, RegistrationMode_Append, Cleanup_Delete);
+		//pcameras[1].Pylon::CBaslerUniversalInstantCamera::RegisterImageEventHandler(new CImageEventHandler, RegistrationMode_Append, Cleanup_Delete);
+		// pcameras[0].Pylon::CBaslerUniversalInstantCamera::RegisterImageEventHandler(new StereoImageEventHandler, RegistrationMode_Append, Cleanup_Delete);
+		//pcameras[0].Pylon::CBaslerUniversalInstantCamera::RegisterImageEventHandler((Pylon::CImageEventHandler*) &(myEventH), RegistrationMode_Append, Cleanup_Delete);
+		//pcameras[1].Pylon::CBaslerUniversalInstantCamera::RegisterImageEventHandler(new StereoImageEventHandler, RegistrationMode_Append, Cleanup_Delete);
+
+		// Set the upper limit of the camera's frame rate to 30 fps
+		pcameras.Open();
+		//pcameras[1].Open();
+
+		//pcameras[0]->AcquisitionFrameRateEnable.SetValue(TRUE);
+		//pcameras[1]->AcquisitionFrameRateEnable.SetValue(TRUE);
+		//pcameras[0]->AcquisitionFrameRate.SetValue(50.0);
+		//pcameras[1]->AcquisitionFrameRate.SetValue(50.0);
+
+		pcameras[0].TriggerSelector.SetValue(TriggerSelector_FrameStart);
+		pcameras[0].TriggerMode.SetValue(TriggerMode_On);
+		pcameras[0].TriggerSource.SetValue(TriggerSource_Line3);
+		pcameras[0].ChunkModeActive.SetValue(true);
+		pcameras[0].ChunkSelector.SetValue(ChunkSelector_Timestamp);
+		pcameras[0].ChunkEnable.SetValue(true);
+		pcameras[0].BslChunkTimestampSelector.SetValue(BslChunkTimestampSelector_ExposureStart);
+
+
+		pcameras[1].TriggerSelector.SetValue(TriggerSelector_FrameStart);
+		pcameras[1].TriggerMode.SetValue(TriggerMode_On);
+		pcameras[1].TriggerSource.SetValue(TriggerSource_Line3);
+		pcameras[1].ChunkModeActive.SetValue(true);
+		pcameras[1].ChunkSelector.SetValue(ChunkSelector_Timestamp);
+		pcameras[1].ChunkEnable.SetValue(true);
+		pcameras[1].BslChunkTimestampSelector.SetValue(BslChunkTimestampSelector_ExposureStart);
+
+		pcameras[0].ExposureTime.SetValue(380000.0);
+		pcameras[1].ExposureTime.SetValue(380000.0);
+
+		pcameras[0].TimestampLatch.Execute();
+		pcameras[1].TimestampLatch.Execute();
+
+		startingTimeCamera0 = pcameras[0].TimestampLatchValue.GetValue();
+		startingTimeCamera1 = pcameras[1].TimestampLatchValue.GetValue();
+
+
+		CamerasReady = true;
+	}
+
+};
+
 void StereoCams::PrintBuildInfo(void)
 {
 	//FlyCapture2::FC2Version fc2Version;
@@ -364,6 +492,7 @@ int StereoCams::StartCaptureCameras(){
 	
 	//pcameras.StartGrabbing(GrabStrategy_OneByOne, GrabLoop_ProvidedByInstantCamera);
 	//pcameras[1].StartGrabbing(GrabStrategy_OneByOne, GrabLoop_ProvidedByInstantCamera);
+	if (pcameras[0].CanWaitForFrameTriggerReady() && pcameras[1].CanWaitForFrameTriggerReady())
 	pcameras.StartGrabbing(GrabStrategy_LatestImageOnly, GrabLoop_ProvidedByUser);
 	//pcameras[1].StartGrabbing(GrabStrategy_LatestImageOnly, GrabLoop_ProvidedByUser);
 
@@ -448,12 +577,16 @@ char StereoCams::GetFrames(float FactorResize, double& msec) {
 	int diff_frame = 0;
 	pcameras[0].RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
 	pcameras[1].RetrieveResult(5000, ptrGrabResult1, TimeoutHandling_ThrowException);
-	frame0 = ptrGrabResult->GetID();
-	frame1 = ptrGrabResult1->GetID();
+	//frame0 = ptrGrabResult->GetID();
+	//frame1 = ptrGrabResult1->GetID();
+	/*timeStamp0 = ptrGrabResult->GetTimeStamp() - startingTimeCamera0;
+	timeStamp1 = ptrGrabResult1->GetTimeStamp() - startingTimeCamera1;*/
+	diff_timeStamp = (double)((double)(ptrGrabResult->GetTimeStamp() - startingTimeCamera0) - (double)(ptrGrabResult1->GetTimeStamp() - startingTimeCamera1)) / 1000000.0;
 	if (ptrGrabResult->GrabSucceeded() && ptrGrabResult1->GrabSucceeded())
 	{
-			diff_frame = frame0 - frame1;
-			if (diff_frame == 0)
+		//cout << "   ts0 - ts1 : " <<  diff_timeStamp << endl;
+			//diff_frame = frame0 - frame1;
+			if ((diff_timeStamp <= 1) && (diff_timeStamp >= -1))
 			{
 				//cout << diff_frame << endl;
 				formatConverter.Convert(pylonImage, ptrGrabResult);
@@ -493,65 +626,88 @@ char StereoCams::GetFrames(float FactorResize, double& msec) {
 			//}
 				//resize(oldView, view1, Size(), FactorResize, FactorResize, INTER_NEAREST);
 				putText(view0, "L", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				putText(view0, to_string(frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+				//putText(view0, to_string(frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
 				if (EnableView)
 					imshow("Left", view0);
 				putText(view1, "R", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				putText(view1, to_string(frame1), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+				//putText(view1, to_string(frame1), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
 				if (EnableView)
 					imshow("Right", view1);
+
+				pcameras[0].TimestampLatch.Execute();
+				pcameras[1].TimestampLatch.Execute();
+
+				startingTimeCamera0 = pcameras[0].TimestampLatchValue.GetValue();
+				startingTimeCamera1 = pcameras[1].TimestampLatchValue.GetValue();
 			}
-			else if (diff_frame == 1)
+			else
 			{
-				//cout << "R : " << ptrGrabResult1->GetID() << endl;
-				pcameras[1].RetrieveResult(5000, ptrGrabResult1, TimeoutHandling_ThrowException);
-				//pcameras[0].RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
-				//frame0 = ptrGrabResult->GetID();
-				frame1 = ptrGrabResult1->GetID();
-				/*diff_frame = frame0 - frame1;
-				cout << "diff_frame: " << diff_frame << endl;*/
-				formatConverter.Convert(pylonImage, ptrGrabResult);
-				formatConverter.Convert(pylonImage1, ptrGrabResult1);
-				Mat oldView = Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC3, (uint8_t*)pylonImage.GetBuffer());
-				Mat oldView1 = Mat(ptrGrabResult1->GetHeight(), ptrGrabResult1->GetWidth(), CV_8UC3, (uint8_t*)pylonImage1.GetBuffer());
-				//intptr_t cameraContextValue = ptrGrabResult->GetCameraContext();
-				//int64_t frameNumber = ptrGrabResult->GetID();
-				resize(oldView, view0, Size(), FactorResize, FactorResize, INTER_NEAREST);
-				resize(oldView1, view1, Size(), FactorResize, FactorResize, INTER_NEAREST);
-				putText(view0, "L", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				putText(view0, to_string(frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				if (EnableView)
-					imshow("Left", view0);
-				putText(view1, to_string(frame1), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				putText(view1, "R", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				if (EnableView)
-					imshow("Right", view1);
-			}				
-			else if (diff_frame == -1)
-			{
-				cout << "L : " << ptrGrabResult->GetID() << endl;
-				pcameras[0].RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
-				frame0 = ptrGrabResult->GetID();
-				//frame1 = ptrGrabResult1->GetID();
-				/*diff_frame = ptrGrabResult->GetID() - ptrGrabResult1->GetID();
-				cout << "diff_frame: " << diff_frame << endl;*/
-				formatConverter.Convert(pylonImage, ptrGrabResult);
-				formatConverter.Convert(pylonImage1, ptrGrabResult1);
-				Mat oldView = Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC3, (uint8_t*)pylonImage.GetBuffer());
-				Mat oldView1 = Mat(ptrGrabResult1->GetHeight(), ptrGrabResult1->GetWidth(), CV_8UC3, (uint8_t*)pylonImage1.GetBuffer());
-				//intptr_t cameraContextValue = ptrGrabResult->GetCameraContext();
-				//int64_t frameNumber = ptrGrabResult->GetID();
-				resize(oldView, view0, Size(), FactorResize, FactorResize, INTER_NEAREST);
-				resize(oldView1, view1, Size(), FactorResize, FactorResize, INTER_NEAREST);
-				putText(view0, "L", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				putText(view0, to_string(frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				if (EnableView)
-					imshow("Left", view0);
-				putText(view1, "R", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				putText(view1, to_string(frame1), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
-				if (EnableView)
-					imshow("Right", view1);
+				//pcameras.StopGrabbing();
+				//if (pcameras[0].CanWaitForFrameTriggerReady() && pcameras[1].CanWaitForFrameTriggerReady())
+				//	pcameras.StartGrabbing(GrabStrategy_LatestImageOnly, GrabLoop_ProvidedByUser);
+				pcameras[1].RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
+				pcameras[0].RetrieveResult(5000, ptrGrabResult1, TimeoutHandling_ThrowException);
+				cout << diff_timeStamp << endl;
 			}
+				
+			//else if (diff_timeStamp != 0)
+			//{
+			//	//cout << "R : " << ptrGrabResult1->GetID() << endl;
+			//	pcameras[1].RetrieveResult(5000, ptrGrabResult1, TimeoutHandling_ThrowException);
+			//	pcameras[0].RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
+			//	frame0 = ptrGrabResult->GetID();
+			//	frame1 = ptrGrabResult1->GetID();
+			//	timeStamp0 = ptrGrabResult->GetTimeStamp() - startingTimeCamera0;
+			//	timeStamp1 = ptrGrabResult1->GetTimeStamp() - startingTimeCamera1;
+			//	diff_timeStamp = (timeStamp0 - timeStamp1) / 1000000;
+			//	cout << "s_frame0 : " << frame0 << "   s_frame1 : " << frame1 << "   s_ts0 - s_ts1 : " << diff_timeStamp << endl;
+			//	//cout << "diff_frame =  " << diff_frame << endl;
+			//	/*diff_frame = frame0 - frame1;
+			//	cout << "diff_frame: " << diff_frame << endl;*/
+			//	formatConverter.Convert(pylonImage, ptrGrabResult);
+			//	formatConverter.Convert(pylonImage1, ptrGrabResult1);
+			//	Mat oldView = Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC3, (uint8_t*)pylonImage.GetBuffer());
+			//	Mat oldView1 = Mat(ptrGrabResult1->GetHeight(), ptrGrabResult1->GetWidth(), CV_8UC3, (uint8_t*)pylonImage1.GetBuffer());
+			//	//intptr_t cameraContextValue = ptrGrabResult->GetCameraContext();
+			//	//int64_t frameNumber = ptrGrabResult->GetID();
+			//	resize(oldView, view0, Size(), FactorResize, FactorResize, INTER_NEAREST);
+			//	resize(oldView1, view1, Size(), FactorResize, FactorResize, INTER_NEAREST);
+			//	putText(view0, "L", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+			//	putText(view0, to_string(frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+			//	if (EnableView)
+			//		imshow("Left", view0);
+			//	putText(view1, to_string(frame1), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+			//	putText(view1, "R", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+			//	if (EnableView)
+			//		imshow("Right", view1);
+			//}				
+			//else if (diff_frame == -1)
+			//{
+			//	cout << "L : " << ptrGrabResult->GetID() << endl;
+			//	pcameras[0].RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
+			//	frame0 = ptrGrabResult->GetID();
+			//	timeStamp0 = ptrGrabResult->GetTimeStamp();
+			//	cout << "diff_frame = -1   " << "frame0 : " << frame0 << "   frame1 : " << frame1 << "   ts0-ts1 : " << (timeStamp1 - timeStamp0) / 1000000 << endl;
+			//	//frame1 = ptrGrabResult1->GetID();
+			//	/*diff_frame = ptrGrabResult->GetID() - ptrGrabResult1->GetID();
+			//	cout << "diff_frame: " << diff_frame << endl;*/
+			//	formatConverter.Convert(pylonImage, ptrGrabResult);
+			//	formatConverter.Convert(pylonImage1, ptrGrabResult1);
+			//	Mat oldView = Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC3, (uint8_t*)pylonImage.GetBuffer());
+			//	Mat oldView1 = Mat(ptrGrabResult1->GetHeight(), ptrGrabResult1->GetWidth(), CV_8UC3, (uint8_t*)pylonImage1.GetBuffer());
+			//	//intptr_t cameraContextValue = ptrGrabResult->GetCameraContext();
+			//	//int64_t frameNumber = ptrGrabResult->GetID();
+			//	resize(oldView, view0, Size(), FactorResize, FactorResize, INTER_NEAREST);
+			//	resize(oldView1, view1, Size(), FactorResize, FactorResize, INTER_NEAREST);
+			//	putText(view0, "L", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+			//	putText(view0, to_string(frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+			//	if (EnableView)
+			//		imshow("Left", view0);
+			//	putText(view1, "R", cv::Point(20, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+			//	putText(view1, to_string(frame1), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.6, CV_RGB(0, 0, 255), 1, 8, false);
+			//	if (EnableView)
+			//		imshow("Right", view1);
+			//}
 			//cout << "frame_number: " << ptrGrabResult->GetID() << "      L - R : " << diff_frame << endl;
 	}
 	

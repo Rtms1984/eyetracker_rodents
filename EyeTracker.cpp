@@ -478,10 +478,16 @@ vector<Point3f> triangulatePointsPupil(vector<couple> Couples, Mat& CM1, Mat& CM
 		imagePoints2.at<float>(i, 1) = Couples[i].P_R.y;
 	}
 
-	undistortPoints(imagePoints1, undistCornerPointsBuf, CM1, D1, R1, P1);
-	undistortPoints(imagePoints2, undistCornerPointsBufSecondary, CM2, D2, R2, P2);
+	//undistortPoints(imagePoints1, undistCornerPointsBuf, CM1, D1, R1, P1);
+	//undistortPoints(imagePoints2, undistCornerPointsBufSecondary, CM2, D2, R2, P2);
 
 	Mat homogenPoints(4, N, CV_32F);
+
+	// Not necessary to undistort !!  we are reading undistorted images.
+	for (int i = 0; i < N; i++) {
+		undistCornerPointsBuf.push_back(Point2f(Couples[i].P_L.x, Couples[i].P_L.y));
+		undistCornerPointsBufSecondary.push_back(Point2f(Couples[i].P_R.x - widthIm, Couples[i].P_R.y));
+	}
 
 	triangulatePoints(P1, P2, undistCornerPointsBuf, undistCornerPointsBufSecondary, homogenPoints);
 
@@ -1231,58 +1237,57 @@ int StereoCalibration(){
 
 
 //#ifdef RISELEZIONA
-	int res0;
+// 
+///////////////////////// Object Point Estimation ////////////////////
+	//int res0;
 	bool objpnt_flag = 0;
-	cout << "Object points estimation?  [0=false, 1=true] " << endl;
-	cin >> res0;
-	if (res0 == 1) {
-		int res1;
-		objpnt_flag = 1;
-		cout << "New images for object point estimation? [0=false, 1=true] " << endl;
-		cin >> res1;
-		if (res1 == 1) {
-			Pylon::PylonInitialize();
-			StereoCams myStereo;
+	//cout << "Object points estimation?  [0=false, 1=true] " << endl;
+	//cin >> res0;
+	//if (res0 == 1) {
+	//	int res1;
+	//	objpnt_flag = 1;
+	//	cout << "New images for object point estimation? [0=false, 1=true] " << endl;
+	//	cin >> res1;
+	//	if (res1 == 1) {
+	//		Pylon::PylonInitialize();
+	//		StereoCams myStereo;
 
-			// check if everything was fine during constructor
-			if (myStereo.CamerasReady == false)
-				return -1;
+	//		// check if everything was fine during constructor
+	//		if (myStereo.CamerasReady == false)
+	//			return -1;
 
-			res1 = myStereo.StartCaptureCameras();
-			if (res1 < 0) return res1;
+	//		res1 = myStereo.StartCaptureCameras();
+	//		if (res1 < 0) return res1;
 
-			myStereo.SetViewOn();
+	//		myStereo.SetViewOn();
 
-			// delete the files left*.bmp e right*.bmp in the current directory
-			cout << endl << "Deleting old object-points-snapshots." << endl;
-			system("del .\\objpnt*.bmp");
+	//		// delete the files left*.bmp e right*.bmp in the current directory
+	//		cout << endl << "Deleting old object-points-snapshots." << endl;
+	//		system("del .\\objpnt*.bmp");
 
-			// takes snapshots of the calibration pattern
-			int k = 0;
-			cout << endl << "Press  s  to get a snapshot,  press q to quit." << endl;
-			while (true) {
-				//res = myStereo.GetFrames();
-				res1 = myStereo.GetSelectedFrames(FactorResize);
-				if (res1 < 0) break;
+	//		// takes snapshots of the calibration pattern
+	//		int k = 0;
+	//		cout << endl << "Press  s  to get a snapshot,  press q to quit." << endl;
+	//		while (true) {
+	//			//res = myStereo.GetFrames();
+	//			res1 = myStereo.GetSelectedFrames(FactorResize);
+	//			if (res1 < 0) break;
 
-				// save the couple of images
-				char nomefile[100];
-				sprintf_s(nomefile, "objpnt_%03i.bmp", k);
-				imwrite(nomefile, myStereo.view0);
+	//			// save the couple of images
+	//			char nomefile[100];
+	//			sprintf_s(nomefile, "objpnt_%03i.bmp", k);
+	//			imwrite(nomefile, myStereo.view0);
 
-				//sprintf_s(nomefile, "objpnt_%03i.bmp", k);
-				//imwrite(nomefile, myStereo.view1);
-				k++;
-				cout << "Captured " << k << endl;
-			}
+	//			//sprintf_s(nomefile, "objpnt_%03i.bmp", k);
+	//			//imwrite(nomefile, myStereo.view1);
+	//			k++;
+	//			cout << "Captured " << k << endl;
+	//		}
 
-			myStereo.StopCaptureCameras();
-			Pylon::PylonTerminate();
-		}
-	}
-
-
-
+	//		myStereo.StopCaptureCameras();
+	//		Pylon::PylonTerminate();
+	//	}
+	//}
 
 
 	int res;
@@ -1290,7 +1295,7 @@ int StereoCalibration(){
 	cin >> res;
 	if (res == 1) {
 		Pylon::PylonInitialize();
-		StereoCams myStereo;
+		StereoCams myStereo('c'); //constructor for calibration
 
 		// check if everything was fine during constructor
 		if (myStereo.CamerasReady == false)
@@ -1796,6 +1801,7 @@ int	DoStereoAVI(bool rectified){
 	cout << endl << "Press  s  to start saving the .AVI,  press q to quit." << endl;
 	while ((reskey != 's') && (reskey != 'q')) {
 		reskey = myStereo.GetFrames(FactorResize,ms);
+		//waitKey(1000);
 	}
 	if (reskey == 'q'){
 		myStereo.StopCaptureCameras();
@@ -1935,8 +1941,8 @@ int	DoStereoAVI(bool rectified){
 
 		Mat view;
 		cvtColor(composite, view, cv::COLOR_GRAY2BGR);
-		putText(view, to_string(myStereo.frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.9, CV_RGB(0, 0, 255), 1, 8, false);
-		putText(view, to_string(myStereo.frame1), cv::Point(40 + w, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.9, CV_RGB(0, 0, 255), 1, 8, false);
+		//putText(view, to_string(myStereo.frame0), cv::Point(40, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.9, CV_RGB(0, 0, 255), 1, 8, false);
+		//putText(view, to_string(myStereo.frame1), cv::Point(40 + w, 20), FONT_HERSHEY_COMPLEX_SMALL, 0.9, CV_RGB(0, 0, 255), 1, 8, false);
 		outputVideo.write(view);
 
 		// update from GUI

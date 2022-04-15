@@ -17,6 +17,7 @@ class StereoCams
 {
 public:
 	StereoCams();
+	StereoCams(char calib_flag); //constructor for calibration
 	~StereoCams() {};
 	bool CamerasReady;  // probabilmente meglio gestito con un throw di eccezione 
 	int StartCaptureCameras();
@@ -28,8 +29,13 @@ public:
 	//void OnImageGrabbed(CInstantCamera& camera, const CGrabResultPtr& ptrGrabResult) override;
 	cv::Mat view0;
 	cv::Mat view1;
-	int64_t frame0;
-	int64_t frame1;
+	//int64_t frame0;
+	//int64_t frame1;
+	//int64_t timeStamp0;
+	int64_t startingTimeCamera0;
+	int64_t startingTimeCamera1;
+	//int64_t timeStamp1;
+	double diff_timeStamp;
 	int glFrame = 0; // global frame number (increased ad each GetFrames() call)
 	float FactorResize = .5;
 	static int frames;
