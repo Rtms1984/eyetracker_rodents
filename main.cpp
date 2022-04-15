@@ -316,8 +316,8 @@ vector<couple> findCouples(Mat gray, Pupil pL, Pupil pR, params par, int mode, i
 
 		double sigmax = 1.; // of the Gaussian filter emplyed for computing the gradient
 		double sigmay = 1.; // of the Gaussian filter emplyed for computing the gradient
-		int half_windowsize_search = 5; //for searching the maximum along x
-		int half_windowsize_fit = 3; //for for fitting the parabola
+		int half_windowsize_search = par.half_x_search; //for searching the maximum along x
+		int half_windowsize_fit = par.half_x_peak; //for for fitting the parabola
 
 		// preparing the x_ and y_ vectors
 		for (int yy = pL.center.y - par.YRange; yy < (pL.center.y + par.YRange); yy += par.YStep) {
@@ -425,8 +425,12 @@ int readCalibFile(Mat& CM1, Mat& CM2, Mat& D1, Mat& D2, Mat& R1, Mat& R2, Mat& P
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//fake_eye//experiment_2021-11-3_17-27-47_fake_eye//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//EyeTracker_Basler_EdgeDetection_SubPixel//EyeTracker//EyeTracker//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//10 december//stereocalib.yml", FileStorage::READ);
-	fs.open("C://Users//Andrea Perissinotto//Desktop//27 january//stereocalib.yml", FileStorage::READ);
+	//fs.open("C://Users//Andrea Perissinotto//Desktop//27 january//stereocalib.yml", FileStorage::READ);
+	//fs.open("C://Users//Andrea Perissinotto//Desktop//1 march//stereocalib.yml", FileStorage::READ);
 	//fs.open("C://Users//Andrea Perissinotto//Desktop//fake_eye//experiment_2022-1-14_16-32-57_fake_eye//stereocalib.yml", FileStorage::READ);
+	//fs.open("C://Users//Andrea Perissinotto//Desktop//fake_eye//experiment_2022-3-9_18-9-1_fake_eye//stereocalib.yml", FileStorage::READ);
+	//fs.open("C://Users//Andrea Perissinotto//Desktop//fake_eye//experiment_2022-4-5_19-59-50_fake_eye//stereocalib.yml", FileStorage::READ);
+	fs.open("C://Users//Andrea Perissinotto//Desktop//gaze_on_screen//2022_04_13//experiment_2022-4-13_11-44-14_fake_eye//stereocalib.yml", FileStorage::READ);
 	if (fs.isOpened()) {
 		fs["CM1"] >> CM1;
 		fs["CM2"] >> CM2;
@@ -497,7 +501,7 @@ void plot3D(const vector<Point3f>& Pts, vector<double>& bestDist, PupilLocation 
 	// Vis requires recompilation of opencv and other operations, now here I simply save the coords,  then using matlab we can plot.
 	//
 	ofstream myfile;
-	myfile.open("Points3D_sp.txt");
+	myfile.open("Points3D_sp_fake_eye.txt");
 	for (int i = 0; i < Pts.size(); i++) {
 		myfile << Pts[i].x << ", " << Pts[i].y << ", " << Pts[i].z << ", " << bestDist[i] << "\n";
 	}
@@ -507,7 +511,8 @@ void plot3D(const vector<Point3f>& Pts, vector<double>& bestDist, PupilLocation 
 }
 
 // find a 3D plane passing nearby the points,  ransac
-PupilLocation findPlane(const vector<Point3f>& Pts, planeFitPar Par, vector<Point3f>& PtsOnPlane) {
+//PupilLocation findPlane(const vector<Point3f>& Pts, planeFitPar Par) {
+PupilLocation findPlane(const vector<Point3f>&Pts, planeFitPar Par, vector<Point3f>&PtsOnPlane) {
 
 	double iterazioni = log(1.0 - Par.probGood) / log(1.0 - pow(Par.w, Par.np));
 	double stditer = sqrt(1.0 - pow(Par.w, Par.np)) / pow(Par.w, Par.np);
@@ -643,7 +648,7 @@ void on_trackbarSig(int par, void*)
 // just to create the first time the file, then it can be modified by hand and just read.
 void write_params() {
 	FileStorage fs;
-	fs.open("settings_PDetector.yml", FileStorage::WRITE);
+	fs.open("settings_PDetector_fake_eye.yml", FileStorage::WRITE);
 
 	// alignment and PuRe
 	float userMinPupilDiameterPx = 20.0;
@@ -691,7 +696,7 @@ int read_params(params& p, planeFitPar& pf) {
 
 	FileStorage fs;
 	string DataPath = "";
-	fs.open(DataPath + "\settings_PDetector.yml", FileStorage::READ);
+	fs.open(DataPath + "settings_PDetector.yml", FileStorage::READ);
 	if (fs.isOpened()) {
 
 		fs["userMinPupilDiameterPx"] >> p.userMinPupilDiameterPx;
@@ -797,7 +802,8 @@ void plotGazeDirection(Mat& view, PupilLocation& pLoc, Mat P1, Mat P2) {
 }
 
 // 
-void plotZoom(Mat& gray, Pupil& pupil, vector<couple>& myCouples, int RL, int mL, float RFactor, vector<Point2f>& ptsOnPlane2D)
+//void plotZoom(Mat& gray, Pupil& pupil, vector<couple>& myCouples, int RL, int mL, float RFactor)
+void plotZoom(Mat & gray, Pupil & pupil, vector<couple>&myCouples, int RL, int mL, float RFactor, vector<Point2f>&ptsOnPlane2D)
 {
 	// plot dello zoom sul pattern
 	int center_x = pupil.center.x;
@@ -873,18 +879,24 @@ int main(int argc, char* argv[])
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-24_10-26-58.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-21_10-26-19.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\fake_eye\\experiment_2022-1-14_16-32-57_fake_eye\\video_2022-1-14_16-32-57.avi");
-	VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\videos\\video_2022-1-27_10-4-54.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\videos\\video_2022-1-27_10-4-54.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-28_10-10-39.avi");
-	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-1-27_10-18-30.avi");
-	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-2-2_11-42-17.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\videos\\video_2022-1-27_10-18-30.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\videos\\video_2022-2-2_11-42-17.avi");
 	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-2-4_11-11-18.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-3-2_11-36-17.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\EyeTracker_Basler_EdgeDetection_SubPixel\\EyeTracker\\EyeTracker\\video_2022-4-7_15-11-47.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\fake_eye\\experiment_2022-3-9_18-9-1_fake_eye\\video_2022-3-9_18-9-1.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\fake_eye\\experiment_2022-4-4_15-12-8_fake_eye\\video_2022-4-4_15-12-8.avi");
+	//VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\fake_eye\\experiment_2022-4-5_19-59-50_fake_eye\\video_2022-4-5_19-59-50.avi");
+	VideoCapture cap("C:\\Users\\Andrea Perissinotto\\Desktop\\gaze_on_screen\\2022_04_13\\video_2022-4-13_11-16-10.avi");
 	if (!cap.isOpened())
 	{
 		cout << "Could not open the output video for write: " << endl;
 		cv::waitKey(1000);
 	}
 	int numFrame = cap.get(CAP_PROP_FRAME_COUNT);
-	cap.read(view);
+	//cap.read(view);
 #endif
 
 
@@ -928,7 +940,7 @@ int main(int argc, char* argv[])
 	VideoWriter outputVideo; // Open the output
 	int fps = 12;
 	//outputVideo.open("output_test.avi", VideoWriter::fourcc('D', 'I', 'B', ' '), fps, S, true); // senza compressione 
-	outputVideo.open("output_test_w.avi", VideoWriter::fourcc('H', 'F', 'Y', 'U'), fps, S, true); // senza compressione 
+	outputVideo.open("C:\\Users\\Andrea Perissinotto\\Desktop\\gaze_on_screen\\2022_04_13\\experiment_2022-4-13_11-44-14_fake_eye\\output_test_video_2022-4-13_11-16-10.avi", VideoWriter::fourcc('H', 'F', 'Y', 'U'), fps, S, true); // senza compressione 
 
 
 	Pupil pupil_L = Pupil();
@@ -951,7 +963,7 @@ int main(int argc, char* argv[])
 	setTrackbarPos("max Pupil diam", "image", (int)(userMaxPupilDiameterPx));
 
 	ofstream myfile;
-	myfile.open("Points3D_sp.txt");
+	myfile.open("C:\\Users\\Andrea Perissinotto\\Desktop\\gaze_on_screen\\2022_04_13\\experiment_2022-4-13_11-44-14_fake_eye\\Points3D_sp_rat_video_2022-4-13_11-16-10.txt");
 	/*cap.read(view);
 	cap.read(view);
 	cap.read(view);
@@ -1070,6 +1082,8 @@ int main(int argc, char* argv[])
 		vector<Point3f> Pupil3D = triangulatePointsPupil(myCouples, CM1, CM2, D1, D2, R1, R2, P1, P2, cols / 2);
 
 		// find the plane in 3D of the pupil border pixels
+		//PupilLocation pLoc = findPlane(Pupil3D, fitParams);
+
 		// and projecting the 3D points on the plane, obaining PtsOnPlane3D
 		vector<Point3f> PtsOnPlane3D;
 		PupilLocation pLoc = findPlane(Pupil3D, fitParams, PtsOnPlane3D);
@@ -1090,6 +1104,8 @@ int main(int argc, char* argv[])
 
 		// plotZoom(gray, pLoc, myCouples, 0=left, 1= right, area from center, rescaling factor);
 		if (param.ShowEdges) {
+			//plotZoom(gray, pupil_L, myCouples, 0, 80, 4.0);
+			//plotZoom(gray, pupil_R, myCouples, 1, 80, 4.0);
 			plotZoom(gray, pupil_L, myCouples, 0, 50, 4.0, PtsOnPlane2D_1);
 			plotZoom(gray, pupil_R, myCouples, 1, 50, 4.0, PtsOnPlane2D_2);
 		}
